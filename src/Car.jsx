@@ -27,11 +27,10 @@ export function Car({ brain, position}) {
             mass: 150,
             position,
             collisionFilterGroup: 1,
+            collisionFilterMask: 2,
         }),
         useRef(null),
     );
-
-
     const [wheels, wheelInfos] = useWheels(width, height, front, wheelRadius);
 
     const [vehicle, vehicleApi] = useRaycastVehicle(

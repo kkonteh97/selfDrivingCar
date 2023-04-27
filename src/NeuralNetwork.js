@@ -9,6 +9,7 @@ export class NeuralNetwork {
     }
 
     static feedForward(givenInputs, network) {
+
         let outputs = Level.feedForward(
             givenInputs, network.levels[0]
         );
@@ -19,25 +20,24 @@ export class NeuralNetwork {
         }
         return outputs;
     }
-    static mutate(network,amount){
-        network.levels.forEach(level => {
-            for(let i=0;i<level.biases.length;i++){
-                level.biases[i]=lerp(
-                    level.biases[i],
-                    Math.random()*2-1,
-                    amount
-                )
-            }
-            for(let i=0;i<level.weights.length;i++){
-                for(let j=0;j<level.weights[i].length;j++){
-                    level.weights[i][j]=lerp(
-                        level.weights[i][j],
-                        Math.random()*2-1,
-                        amount
+    static mutate(network, amount) {
+        const mutatedNetwork = {
+            ...network,
+            levels: network.levels.map(level => ({
+                biases: level.biases.map(bias =>
+                    lerp(bias, Math.random() * 2 - 1, amount)
+                ),
+                inputs: level.inputs,
+                outputs: level.outputs,
+                weights: level.weights.map(weight =>
+                    weight.map(w =>
+                        lerp(w, Math.random() * 2 - 1, amount)
                     )
-                }
-            }
-        });
+                )
+            }))
+        };
+
+        return mutatedNetwork;
     }
 }
 export function mutate(network,amount){
@@ -59,7 +59,6 @@ export function mutate(network,amount){
             }
         }
     });
-    return network;
 }
 class Level {
     constructor(inputCount, outputCount) {
