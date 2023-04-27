@@ -1,67 +1,73 @@
 import { useEffect, useState } from "react";
 
-export const useControls = (vehicleApi, chassisApi) => {
-  let [controls, setControls] = useState({ });
+export const useControls = (type) => {{
+  const [forward, setForward] = useState(false);
+  const [backward, setBackward] = useState(false);
+  const [left, setLeft] = useState(false);
+  const [right, setRight] = useState(false);
 
   useEffect(() => {
-    const keyDownPressHandler = (e) => {
-      setControls((controls) => ({ ...controls, [e.key.toLowerCase()]: true }));
+    const addKeyboardListeners = () => {
+      const handleKeyDown = (event) => {
+        switch (event.key) {
+          case 'ArrowUp':
+            setForward(true);
+            break;
+          case 'ArrowDown':
+            setBackward(true);
+            break;
+          case 'ArrowLeft':
+            setLeft(true);
+            break;
+          case 'ArrowRight':
+            setRight(true);
+            break;
+          default:
+            break;
+        }
+      };
+
+      const handleKeyUp = (event) => {
+        switch (event.key) {
+          case 'ArrowUp':
+            setForward(false);
+            break;
+          case 'ArrowDown':
+            setBackward(false);
+            break;
+          case 'ArrowLeft':
+            setLeft(false);
+            break;
+          case 'ArrowRight':
+            setRight(false);
+            break;
+          default:
+            break;
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('keyup', handleKeyUp);
+
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+        document.removeEventListener('keyup', handleKeyUp);
+      };
+    };
+
+    switch (type) {
+      case 'KEYS':
+        addKeyboardListeners();
+        break;
+      default:
+        break;
     }
+  }, [type]);
 
-    const keyUpPressHandler = (e) => {
-      setControls((controls) => ({ ...controls, [e.key.toLowerCase()]: false }));
-    }
-  
-    window.addEventListener("keydown", keyDownPressHandler);
-    window.addEventListener("keyup", keyUpPressHandler);
-    return () => {
-      window.removeEventListener("keydown", keyDownPressHandler);
-      window.removeEventListener("keyup", keyUpPressHandler);
-    }
-  }, []);
-
-  useEffect(() => {
-    if(!vehicleApi || !chassisApi) return;
-
-    if (controls.w) {
-      vehicleApi.applyEngineForce(1500, 2);
-      vehicleApi.applyEngineForce(1500, 3);
-    } else if (controls.s) {
-      vehicleApi.applyEngineForce(-100, 2);
-      vehicleApi.applyEngineForce(-100, 3);
-    } else {
-      vehicleApi.applyEngineForce(0, 2);
-      vehicleApi.applyEngineForce(0, 3);
-    }
-
-    if (controls.a) {
-      vehicleApi.setSteeringValue(0.35, 2);
-      vehicleApi.setSteeringValue(0.35, 3);
-      vehicleApi.setSteeringValue(-0.1, 0);
-      vehicleApi.setSteeringValue(-0.1, 1);
-    } else if (controls.d) {
-      vehicleApi.setSteeringValue(-0.35, 2);
-      vehicleApi.setSteeringValue(-0.35, 3);
-      vehicleApi.setSteeringValue(0.1, 0);
-      vehicleApi.setSteeringValue(0.1, 1);
-    } else {
-      for(let i = 0; i < 4; i++) {
-        vehicleApi.setSteeringValue(0, i);
-      }
-    }
-
-    if (controls.arrowdown)  chassisApi.applyLocalImpulse([0, -5, 0], [0, 0, +1]);
-    if (controls.arrowup)    chassisApi.applyLocalImpulse([0, -5, 0], [0, 0, -1]);
-    if (controls.arrowleft)  chassisApi.applyLocalImpulse([0, -5, 0], [-0.5, 0, 0]);
-    if (controls.arrowright) chassisApi.applyLocalImpulse([0, -5, 0], [+0.5, 0, 0]);
-
-    if (controls.r) {
-      chassisApi.position.set(-1.5, 0.5, 3);
-      chassisApi.velocity.set(0, 0, 0);
-      chassisApi.angularVelocity.set(0, 0, 0);
-      chassisApi.rotation.set(0, 0, 0);
-    }
-  }, [controls, vehicleApi, chassisApi]);
-
-  return controls;
-}
+  return {
+    forward,
+    backward,
+    left,
+    right,
+  };
+}}

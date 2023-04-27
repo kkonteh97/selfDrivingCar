@@ -5,38 +5,48 @@ import {TextureLoader, MeshBasicMaterial} from "three";
 import {useFrame} from "@react-three/fiber";
 
 import { useBox } from "@react-three/cannon";
+import {useGLTF} from "@react-three/drei";
 
 const debug = false;
 
-
-export function Track() {
-    const trackRef = useRef();
-    useFrame(() => {
-        // Manipulate the track element in some way
-        trackRef.current.rotation.y += 0.01;
-    });
-    const result = useLoader(
+useGLTF.preload(process.env.PUBLIC_URL + '/models/untitled3.glb');
+export function Track({position, rotation, scale}) {
+    const {nodes} = useLoader(
         GLTFLoader,
-        process.env.PUBLIC_URL + "/models/gummy_bear.glb"
-    );
-
-
-    let geometry = result.scene.children[0].geometry;
-
+        process.env.PUBLIC_URL + '/models/untitled3.glb');
+    const geometry1 = nodes.Plane.geometry;
+    const geometry2 = nodes.Plane001.geometry;
     return (
         <>
             <mesh
-                geometry={geometry}
-                ref={trackRef}
-            />
-            <meshStandardMaterial
-                attach="material"
-                color="white"
-                roughness={0.5}
-                metalness={0.5}
-            />
+                geometry={geometry1}
+                position={position}
+                rotation={rotation}
+                scale={scale}
+                userData={{isRelevant: true}}
+            >
+                <meshStandardMaterial
+                    attach="material"
+                    color="black"
+                    roughness={0.5}
+                    metalness={0.5}
+                />
+            </mesh>
+            <mesh
+                geometry={geometry2}
+                position={position}
+                rotation={rotation}
+                scale={scale}
+                userData={{isRelevant: true}}
+            >
+                <meshStandardMaterial
+                    attach="material"
+                    color="black"
+                    roughness={0.5}
+                    metalness={0.5}
+                />
+            </mesh>
+
         </>
-
-
     );
 }

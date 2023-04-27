@@ -21,3 +21,17 @@ p {
   font-size: 12px;
   letter-spacing: 0.75px;
 }
+.verticalButtons{
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  align-content: center;
+  background: black;
+  color: white;
+  padding: 5px;
+}
+#myCanvas {
+  position: absolute;
+  top: 0;
+  right: 0;
+}

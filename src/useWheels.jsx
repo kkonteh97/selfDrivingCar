@@ -1,8 +1,9 @@
 import { useCompoundBody } from "@react-three/cannon";
 import { useRef } from "react";
 
-export const useWheels = (width, height, front, radius) => {
+export function useWheels(width, height, front, radius) {
   const wheels = [useRef(null), useRef(null), useRef(null), useRef(null)];
+
 
   const wheelInfo = {
     radius,
@@ -62,4 +63,5 @@ export const useWheels = (width, height, front, radius) => {
   useCompoundBody(propsFunc, wheels[3]);
 
   return [wheels, wheelInfos];
-};
+}
+
