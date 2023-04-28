@@ -9,7 +9,6 @@ export class NeuralNetwork {
     }
 
     static feedForward(givenInputs, network) {
-
         let outputs = Level.feedForward(
             givenInputs, network.levels[0]
         );

@@ -5,7 +5,7 @@ import {useControls} from "./useControls";
 import {NeuralNetwork} from "./NeuralNetwork";
 import {useWheels} from "./useWheels";
 import {Sensor} from "./Sensor";
-import {Box3} from "three";
+import { Quaternion, Raycaster, Vector3} from "three";
 
 export function Car({brain, position, controlsType, carModel}) {
     const width = 0.15;
@@ -45,21 +45,22 @@ export function Car({brain, position, controlsType, carModel}) {
     const [right, setRight] = useState(false);
 
     const [damage, setDamage] = useState(false);
+    let position1 = new Vector3(0, 0, 0);
+    let quaternion = new Quaternion(0, 0, 0, 0);
+    const numRays = 5; // set the number of rays to cast
+    const rayLength = 1.5; // set the length of the rays
+    const rayAngle = Math.PI / 6; // set the angle between the rays
 
+    const raycaster = new Raycaster();
 
+    const relevantObjectsRef = useRef([]);
     useFrame((state) => {
-        const [rayDistances, relevantObjects] = Sensor(chassisBody, state);
+        if (relevantObjectsRef.current.length === 0) {
+            relevantObjectsRef.current = state.scene.children.filter((obj) => obj.userData.isRelevant);
+        }
+        const rayDistances  = Sensor(chassisBody, state, position1, quaternion, raycaster, numRays, rayLength, rayAngle, relevantObjectsRef.current);
         const outputs = NeuralNetwork.feedForward(rayDistances, brain);
 
-        // loop through relevant objects and if intersects with car, set damage to true
-        for (let i = 0; i < relevantObjects.length; i++) {
-            const object = relevantObjects[i];
-            const box = new Box3().setFromObject(object);
-            const carBox = new Box3().setFromObject(mesh);
-            if (box.intersectsBox(carBox)) {
-                setDamage(true);
-            }
-        }
         if (useBrain) {
             setForward(outputs[0] > .5)
             setRight(outputs[1] > .5)
@@ -94,8 +95,6 @@ export function Car({brain, position, controlsType, carModel}) {
 
         }
     });
-
-
     return (
         <group ref={vehicle} name="vehicle">
             <group ref={chassisBody} name="chassisBody">

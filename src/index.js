@@ -17,10 +17,8 @@ import {Car} from "./Car";
 
 useLoader.preload(GLTFLoader, process.env.PUBLIC_URL + "/models/car.glb");
 
-function Scene() {
-    let brain = new NeuralNetwork(
-        [5, 6, 4]
-    );
+function Scene({gltfLoader, canvas, brain}) {
+
 
     if (localStorage.getItem("bestBrain")) {
         brain = JSON.parse(
@@ -34,14 +32,13 @@ function Scene() {
 
     useEffect(() => {
         const loader = new GLTFLoader();
-        loader.load(process.env.PUBLIC_URL + "/models/car.glb", (gltf) => {
+        gltfLoader.load(process.env.PUBLIC_URL + "/models/car.glb", (gltf) => {
             setCarModel(gltf.scene);
             setCarModel2(gltf.scene.clone());
         });
     }, []);
     const chassisBodyRef = useRef();
 
-    const canvas = document.getElementById('myCanvas');
     const N = 1;
     const cars = [];
 
@@ -71,7 +68,6 @@ function Scene() {
             />);
         }
     }
-    const scene = useThree((state) => state.scene);
     const saveButton = document.getElementById("saveButton");
     saveButton.addEventListener("click", () => {
         localStorage.setItem("bestBrain", JSON.stringify(brain));
@@ -90,10 +86,6 @@ function Scene() {
     if (!carModel) {
         return null;
     }
-    if (chassisBodyRef) {
-        console.log(chassisBodyRef);
-    }
-
     return (
         <>
             <OrbitControls/>
@@ -110,6 +102,15 @@ function Scene() {
 
 
 function App() {
+    let brain = new NeuralNetwork(
+        [5, 6, 4]
+    );
+    const [gltfLoader, setGltfLoader] = useState(new GLTFLoader());
+    const [canvas, setCanvas] = useState(document.getElementById('myCanvas'));
+    useEffect(() => {
+        setGltfLoader(new GLTFLoader());
+        setCanvas(document.getElementById('myCanvas'));
+    }, []);
     return (
         <>
             <Sky sunPosition={[100, 10, 100]} scale={100}/>
@@ -117,7 +118,12 @@ function App() {
             <Suspense fallback={null}>
                 <Physics gravity={[0, -2.6, 0]} broadphase="SAP" allowSleep>
                     <Debug color="black" scale={1}>
-                        <Scene/>
+                        <Scene
+                            gltfLoader={gltfLoader}
+                            canvas={canvas}
+                            brain={brain}
+
+                        />
                     </Debug>
                 </Physics>
             </Suspense>

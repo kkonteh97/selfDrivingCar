@@ -1,17 +1,13 @@
-import {BufferGeometry, Line, LineBasicMaterial, Quaternion, Raycaster, Vector3} from "three";
-import {useFrame} from "@react-three/fiber";
+import {BufferGeometry, Line, LineBasicMaterial, Vector3} from "three";
 
-export function Sensor(chassisBody, state) {
-    let position = new Vector3(0, 0, 0);
-    let quaternion = new Quaternion(0, 0, 0, 0);
-    const numRays = 5; // set the number of rays to cast
-    const rayLength = 1.5; // set the length of the rays
-    const rayAngle = Math.PI / 6; // set the angle between the rays
-    const rayDistances = new Array(5).fill(0);
+const lineGeometry = new BufferGeometry();
+const lineMaterial1 = new LineBasicMaterial({color: 0xff0000});
+const lineMaterial2 = new LineBasicMaterial({color: 0x000000});
+const linePool = [];
+export function Sensor(chassisBody, state, position, quaternion, raycaster, numRays,rayLength, rayAngle,relevantObjects) {
     position.setFromMatrixPosition(chassisBody.current.matrixWorld);
     quaternion.setFromRotationMatrix(chassisBody.current.matrixWorld);
-    const raycaster = new Raycaster();
-    const relevantObjects = state.scene.children.filter((obj) => obj.userData.isRelevant);
+    const rayDistances = new Array(5).fill(0);
     for (let i = 0; i < numRays; i++) {
 
 
@@ -27,39 +23,30 @@ export function Sensor(chassisBody, state) {
         const intersects = raycaster.intersectObjects(relevantObjects);
         if (intersects.length > 0 && intersects[0].distance < rayLength) {
             const intersection = intersects[0].point.clone();
+            let line1 = linePool.pop();
+            let line2 = linePool.pop();
+            if (!line1) {
+                const geometry1 = lineGeometry.clone();
+                line1 = new Line(geometry1, lineMaterial1);
+            }
+            if (!line2) {
+                const geometry2 = lineGeometry.clone();
+                line2 = new Line(geometry2, lineMaterial2);
+            }
 
-            // create two line segments with different colors
-            const points1 = [position.clone(), intersection.clone()];
-            const points2 = [intersection.clone(), raycaster.ray.origin.clone().add(raycaster.ray.direction)];
-            const geometry1 = new BufferGeometry().setFromPoints(points1);
-            const geometry2 = new BufferGeometry().setFromPoints(points2);
-            const material1 = new LineBasicMaterial({color: 0xff0000});
-            const material2 = new LineBasicMaterial({color: 0x000000});
-            const line1 = new Line(geometry1, material1);
-            const line2 = new Line(geometry2, material2);
+            line1.geometry.setFromPoints([position.clone(), intersection.clone()]);
+            line2.geometry.setFromPoints([intersection.clone(), raycaster.ray.origin.clone().add(raycaster.ray.direction)]);
             state.scene.add(line1, line2);
-            // calculate the distance between each ray and the intersection point
-            const distance = 1 - raycaster.ray.origin.distanceTo(intersection)/ rayLength;
-            rayDistances[i] = distance;
-            // remove lines after a delay
+
+            rayDistances[i] = 1 - raycaster.ray.origin.distanceTo(intersection) / rayLength;
             setTimeout(() => {
                 state.scene.remove(line1, line2);
-            }, 10);
+                linePool.push(line1, line2);
+            }, 5);
         } else {
-            // visualize entire ray in red if no intersection
-            const points = [position.clone(), raycaster.ray.origin.clone().add(raycaster.ray.direction)];
-            const geometry = new BufferGeometry().setFromPoints(points);
-            const material = new LineBasicMaterial({color: 0xff0000});
-            const line = new Line(geometry, material);
-            state.scene.add(line);
-
-            // remove line after a delay
-            setTimeout(() => {
-                state.scene.remove(line);
-            }, 10);
+            rayDistances[i] = 0;
         }
-
     }
-    return [rayDistances, relevantObjects];
+    return rayDistances;
 
 }
