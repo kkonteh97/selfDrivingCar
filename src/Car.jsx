@@ -1,4 +1,4 @@
-import {useBox, useCompoundBody, useRaycastVehicle} from "@react-three/cannon";
+import {useBox, useRaycastVehicle} from "@react-three/cannon";
 import {useFrame, useLoader} from "@react-three/fiber";
 import React, {useEffect, useRef, useState} from "react";
 import {BufferGeometry, Line, LineBasicMaterial, Quaternion, Raycaster, Vector3} from "three";

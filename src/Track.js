@@ -1,13 +1,8 @@
-import React, {useRef, useEffect} from "react";
+import React from "react";
 import {useLoader} from "@react-three/fiber";
 import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader";
-import {TextureLoader, MeshBasicMaterial} from "three";
-import {useFrame} from "@react-three/fiber";
-
-import { useBox } from "@react-three/cannon";
 import {useGLTF} from "@react-three/drei";
 
-const debug = false;
 
 useGLTF.preload(process.env.PUBLIC_URL + '/models/untitled3.glb');
 export function Track({position, rotation, scale}) {
