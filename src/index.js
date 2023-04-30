@@ -9,7 +9,7 @@ import {Ground} from "./Ground";
 import {Track} from "./Track";
 import {NeuralNetwork} from "./NeuralNetwork";
 import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader";
-import {Car, useCar} from "./Car";
+import {Car} from "./Car";
 import {Quaternion, Vector3} from "three";
 
 useLoader.preload(GLTFLoader, process.env.PUBLIC_URL + "/models/car.glb");
@@ -37,9 +37,9 @@ function Scene({gltfLoader, canvas}) {
             setCarModel(gltf.scene);
             setCarModel2(gltf.scene.clone());
         });
-    }, []);
+    }, [gltfLoader]);
 
-    const N = 10
+    const N = 2
     const [carStatus, setCarStatus] = useState(Array(N).fill(true));
     const cars = useMemo(() => {
         const result = [];
@@ -66,7 +66,7 @@ function Scene({gltfLoader, canvas}) {
                         position={[-10, 0.1, 3]}
                         rotation={[0, Math.PI, 0]}
                         brain={mutatedBrain}
-                        controlsType="AI"
+                        controlsType="Keys"
                         carModel={carModel2}
                         id={i}
                         distance={0}
@@ -78,13 +78,23 @@ function Scene({gltfLoader, canvas}) {
         return result;
     }, [brain, carModel, carModel2]);
 
-    let bestDistance = 0;
-    let bestcar = 0;
-
+    let bestDistance = useRef(0);
+    const [activeCar, setActiveCar] = useState(0);
+    useEffect(() => {
+        // Check if the active car has been removed
+        if (!carStatus[activeCar]) {
+            // Find the next active car
+            const nextActiveCar = carStatus.findIndex((status) => status === true);
+            // If there is a next active car, set it as the active car
+            if (nextActiveCar !== -1) {
+                setActiveCar(nextActiveCar);
+            }
+        }
+    }, [carStatus, activeCar]);
     const handleCarChassisApiUpdate = useCallback((chassisBody, distance,damage, carId) => {
-        if (distance > bestDistance) {
-            bestDistance = distance;
-            bestcar = carId;
+        if (distance > bestDistance.current) {
+            bestDistance.current = distance;
+            setActiveCar(carId);
         }
         // remove car if damage is true
         if (damage) {
@@ -93,14 +103,22 @@ function Scene({gltfLoader, canvas}) {
                 newStatus[carId] = false;
                 return newStatus;
             });
+            if (carId === activeCar) {
+                const nextActiveCar = carStatus.findIndex((status) => status === true);
+                if (nextActiveCar !== -1) {
+                    setActiveCar(nextActiveCar);
+                }
+            }
         }
-        if (carId !== bestcar) return;
+        if (carId === activeCar) {
+            positionRef.current.setFromMatrixPosition(chassisBody.current.matrixWorld);
+            quaternionRef.current.setFromRotationMatrix(chassisBody.current.matrixWorld);
+
+        }
 
 
 
-        positionRef.current.setFromMatrixPosition(chassisBody.current.matrixWorld);
-        quaternionRef.current.setFromRotationMatrix(chassisBody.current.matrixWorld);
-        wDirRef.current.set(0, 0, 1).applyQuaternion(quaternionRef.current);
+       wDirRef.current.set(0, 0, 1).applyQuaternion(quaternionRef.current);
         const offset = new Vector3(0, .2, 0);
         let cameraPosition = positionRef.current.clone().add(wDirRef.current.clone().multiplyScalar(1).add(offset));
         wDirRef.current.add(new Vector3(0, 0.2, 0));

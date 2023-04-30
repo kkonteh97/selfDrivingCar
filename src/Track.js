@@ -1,8 +1,6 @@
-import React, {useEffect, useMemo, useRef} from "react";
-import {useGLTF, useFBX} from "@react-three/drei";
-import {useBox, useTrimesh } from "@react-three/cannon";
-import * as THREE from "three";
-import {useFrame} from "@react-three/fiber";
+import React from "react";
+import {useGLTF} from "@react-three/drei";
+import { useTrimesh } from "@react-three/cannon";
 useGLTF.preload(process.env.PUBLIC_URL + '/models/untitled3.glb');
 
 export function Track({position, rotation, scale}) {
@@ -11,7 +9,7 @@ export function Track({position, rotation, scale}) {
     const geometry = result.scene.children[2].geometry;
     const vertices = geometry.attributes.position.array;
     const indices = geometry.index.array;
-    const [ref1, api1] = useTrimesh(() => ({
+    const [ref1] = useTrimesh(() => ({
         mass: 0,
         position: [0, 0, 0],
         rotation: [0, 0, 0],

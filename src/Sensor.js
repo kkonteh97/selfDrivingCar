@@ -1,5 +1,4 @@
 import {BufferGeometry, Line, LineBasicMaterial, Vector3} from "three";
-import {useState} from "react";
 
 const lineGeometry = new BufferGeometry();
 const lineMaterial = new LineBasicMaterial({color: 0xff0000});

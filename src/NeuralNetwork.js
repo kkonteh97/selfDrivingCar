@@ -20,7 +20,7 @@ export class NeuralNetwork {
         return outputs;
     }
     static mutate(network, amount) {
-        const mutatedNetwork = {
+        return {
             ...network,
             levels: network.levels.map(level => ({
                 biases: level.biases.map(bias =>
@@ -35,29 +35,7 @@ export class NeuralNetwork {
                 )
             }))
         };
-
-        return mutatedNetwork;
     }
-}
-export function mutate(network,amount){
-    network.levels.forEach(level => {
-        for(let i=0;i<level.biases.length;i++){
-            level.biases[i]=lerp(
-                level.biases[i],
-                Math.random()*2-1,
-                amount
-            )
-        }
-        for(let i=0;i<level.weights.length;i++){
-            for(let j=0;j<level.weights[i].length;j++){
-                level.weights[i][j]=lerp(
-                    level.weights[i][j],
-                    Math.random()*2-1,
-                    amount
-                )
-            }
-        }
-    });
 }
 class Level {
     constructor(inputCount, outputCount) {
