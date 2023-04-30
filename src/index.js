@@ -1,26 +1,25 @@
 import "./index.css";
 import {createRoot} from "react-dom/client";
 import React, {Suspense, useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {
-    OrbitControls, PerspectiveCamera,
-    Sky,
-    Stats
-} from '@react-three/drei';
-import {Canvas, useFrame, useLoader, useThree} from "@react-three/fiber";
-import {Physics, Debug, useBox, useRaycastVehicle} from "@react-three/cannon";
+import {Sky, Stats} from '@react-three/drei';
+import {Canvas, useLoader, useThree} from "@react-three/fiber";
+import {Debug, Physics} from "@react-three/cannon";
 import {Visualizer} from './visualizer';
 import {Ground} from "./Ground";
 import {Track} from "./Track";
 import {NeuralNetwork} from "./NeuralNetwork";
 import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader";
-import {Car} from "./Car";
-import {useControls} from "./useControls";
-import {Vector3, Quaternion, Euler} from "three";
+import {Car, useCar} from "./Car";
+import {Quaternion, Vector3} from "three";
 
 useLoader.preload(GLTFLoader, process.env.PUBLIC_URL + "/models/car.glb");
 
 
-function Scene({gltfLoader, canvas, brain}) {
+function Scene({gltfLoader, canvas}) {
+    let brain;
+    brain = new NeuralNetwork(
+        [5, 6, 4]
+    );
     const [carModel, setCarModel] = useState(null);
     const [carModel2, setCarModel2] = useState(null);
     if (localStorage.getItem("bestBrain")) {
@@ -28,23 +27,10 @@ function Scene({gltfLoader, canvas, brain}) {
             localStorage.getItem("bestBrain")
         );
     }
-    // camera
     const {camera} = useThree();
     const positionRef = useRef(new Vector3(0, 0, 0));
     const quaternionRef = useRef(new Quaternion(0, 0, 0, 0));
     const wDirRef = useRef(new Vector3(0, 0, 1));
-
-    const handleCarChassisApiUpdate = useCallback((chassisBody, carId) => {
-        if (carId !== 0) return;
-        positionRef.current.setFromMatrixPosition(chassisBody.current.matrixWorld);
-        quaternionRef.current.setFromRotationMatrix(chassisBody.current.matrixWorld);
-        wDirRef.current.set(0, 0, 1).applyQuaternion(quaternionRef.current);
-        const offset = new Vector3(0, .2, 0);
-        let cameraPosition = positionRef.current.clone().add(wDirRef.current.clone().multiplyScalar(1).add(new Vector3(0, 0.3, 0)));
-        wDirRef.current.add(new Vector3(0, 0.2, 0));
-        camera.position.copy(cameraPosition)
-        camera.lookAt(positionRef.current)
-        }, []);
 
     useEffect(() => {
         gltfLoader.load(process.env.PUBLIC_URL + "/models/car.glb", (gltf) => {
@@ -53,8 +39,8 @@ function Scene({gltfLoader, canvas, brain}) {
         });
     }, []);
 
-
-    const N = 2
+    const N = 10
+    const [carStatus, setCarStatus] = useState(Array(N).fill(true));
     const cars = useMemo(() => {
         const result = [];
         for (let i = 0; i < N; i++) {
@@ -64,34 +50,63 @@ function Scene({gltfLoader, canvas, brain}) {
                         key={i}
                         position={[-10, 0.1, 3]}
                         rotation={[0, Math.PI, 0]}
-                        scale={[1, 1, 1]}
                         brain={brain}
-                        controlsType="Keys"
+                        controlsType="AI"
                         carModel={carModel}
                         id={i}
-                        onChassisBodyUpdate={(chassisBody) => handleCarChassisApiUpdate(chassisBody, i)}
+                        distance={0}
+                        onChassisBodyUpdate={(chassisBody, distance, damage) => handleCarChassisApiUpdate(chassisBody, distance, damage,i)}
                     />
                 );
             } else {
-                const mutatedBrain = i === 0 ? brain : NeuralNetwork.mutate(brain, 0.1);
+                const mutatedBrain = NeuralNetwork.mutate(brain, 0.1)
                 result.push(
                     <Car
                         key={i}
                         position={[-10, 0.1, 3]}
                         rotation={[0, Math.PI, 0]}
-                        scale={[1, 1, 1]}
                         brain={mutatedBrain}
                         controlsType="AI"
                         carModel={carModel2}
                         id={i}
-                        onChassisBodyUpdate={(chassisBody) => handleCarChassisApiUpdate(chassisBody, i)}
+                        distance={0}
+                        onChassisBodyUpdate={(chassisBody, distance, damage) => handleCarChassisApiUpdate(chassisBody, distance,damage, i)}
                     />
                 );
             }
         }
         return result;
-    }, [brain, carModel, carModel2, handleCarChassisApiUpdate]);
+    }, [brain, carModel, carModel2]);
 
+    let bestDistance = 0;
+    let bestcar = 0;
+
+    const handleCarChassisApiUpdate = useCallback((chassisBody, distance,damage, carId) => {
+        if (distance > bestDistance) {
+            bestDistance = distance;
+            bestcar = carId;
+        }
+        // remove car if damage is true
+        if (damage) {
+            setCarStatus(prevStatus => {
+                const newStatus = [...prevStatus];
+                newStatus[carId] = false;
+                return newStatus;
+            });
+        }
+        if (carId !== bestcar) return;
+
+
+
+        positionRef.current.setFromMatrixPosition(chassisBody.current.matrixWorld);
+        quaternionRef.current.setFromRotationMatrix(chassisBody.current.matrixWorld);
+        wDirRef.current.set(0, 0, 1).applyQuaternion(quaternionRef.current);
+        const offset = new Vector3(0, .2, 0);
+        let cameraPosition = positionRef.current.clone().add(wDirRef.current.clone().multiplyScalar(1).add(offset));
+        wDirRef.current.add(new Vector3(0, 0.2, 0));
+        camera.position.copy(cameraPosition)
+        camera.lookAt(positionRef.current)
+    }, [camera]);
     useEffect(() => {
         const saveButton = document.getElementById("saveButton");
         const handleSaveClick = () => {
@@ -100,11 +115,13 @@ function Scene({gltfLoader, canvas, brain}) {
         saveButton.addEventListener("click", handleSaveClick);
         return () => saveButton.removeEventListener("click", handleSaveClick);
     }, [brain]);
+    const activeCars = useMemo(() => {
+        return cars.filter((_, i) => carStatus[i]);
+    }, [cars, carStatus]);
 
     const contextRef = useRef(null);
     useEffect(() => {
-        const context = canvas.getContext("2d");
-        contextRef.current = context;
+        contextRef.current = canvas.getContext("2d");
         canvas.width = 300;
         canvas.height = 400;
         function animate(time) {
@@ -119,10 +136,9 @@ function Scene({gltfLoader, canvas, brain}) {
     }
     return (
         <>
-            //camera
             <primitive object={camera} />
             <Ground/>
-            {cars}
+            {activeCars}
             <Stats/>
             <Track position={[0, 0, -3]} rotation={[0, 0, 0]} scale={[1, 1, 1]}/>
         </>
@@ -130,9 +146,7 @@ function Scene({gltfLoader, canvas, brain}) {
 }
 
 function App() {
-    let brain = new NeuralNetwork(
-        [5, 6, 4]
-    );
+
     const [gltfLoader, setGltfLoader] = useState(new GLTFLoader());
     const [canvas, setCanvas] = useState(document.getElementById('myCanvas'));
     useEffect(() => {
@@ -156,7 +170,6 @@ function App() {
                         <Scene
                             gltfLoader={gltfLoader}
                             canvas={canvas}
-                            brain={brain}
                         />
                     </Debug>
                 </Physics>
