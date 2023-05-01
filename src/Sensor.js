@@ -1,6 +1,5 @@
 import {BufferGeometry, Line, LineBasicMaterial, Vector3} from "three";
 
-const lineGeometry = new BufferGeometry();
 const lineMaterial = new LineBasicMaterial({color: 0xff0000});
 const linePool = [];
 export function Sensor(chassisBody, state, position, quaternion, raycaster, numRays,rayLength, rayAngle,relevantObjects) {
@@ -21,23 +20,23 @@ export function Sensor(chassisBody, state, position, quaternion, raycaster, numR
         const intersects = raycaster.intersectObjects(relevantObjects);
         if (intersects.length > 0 && intersects[0].distance < rayLength) {
             const intersection = intersects[0].point.clone();
-            let line1 = linePool;
+            let line = linePool;
 
-            const geometry = lineGeometry.clone();
-            line1 = new Line(geometry, lineMaterial);
-            line1.geometry.setFromPoints([position.clone(), intersection.clone()]);
-            state.scene.add(line1);
-            const distance =    1 - raycaster.ray.origin.distanceTo(intersection) / rayLength
-            rayDistances[i] =   distance;
+            const geometry = new BufferGeometry().setFromPoints([position.clone(), intersection.clone()]);
+            line = new Line(geometry, lineMaterial);
+            state.scene.add(line);
+            rayDistances[i] =   1 - raycaster.ray.origin.distanceTo(intersection) / rayLength;
 
             if (raycaster.ray.origin.distanceTo(intersection) < 0.1) {
                 damage = true;
             }
 
-            setTimeout(() => {
-                state.scene.remove(line1);
-                linePool.push(line1);
-            }, 5);
+            //remove line
+            linePool.push(line);
+            if (linePool.length > 5) {
+                state.scene.remove(linePool.shift());
+            }
+
         } else {
             rayDistances[i] = 0;
         }

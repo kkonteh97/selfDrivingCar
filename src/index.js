@@ -15,7 +15,7 @@ import {Quaternion, Vector3} from "three";
 useLoader.preload(GLTFLoader, process.env.PUBLIC_URL + "/models/car.glb");
 
 
-function Scene({gltfLoader, canvas}) {
+function Scene({ canvas}) {
     let brain;
     brain = new NeuralNetwork(
         [5, 6, 4]
@@ -32,7 +32,7 @@ function Scene({gltfLoader, canvas}) {
     const wDirRef = useRef(new Vector3(0, 0, 1));
 
 
-    const N = 3
+    const N = 5;
     const [carStatus, setCarStatus] = useState(Array(N).fill(true));
     const cars = useMemo(() => {
         const result = [];
@@ -153,19 +153,13 @@ function Scene({gltfLoader, canvas}) {
             <Ground/>
             {activeCars}
             <Stats/>
-            <Track position={[0, 0, -3]} rotation={[0, 0, 0]} scale={[1, 1, 1]}/>
+            <Track position={[0, 1, -3]} rotation={[0, 0, 0]} scale={[1, 1, 1]}/>
         </>
     );
 }
 
 function App() {
-
-    const [gltfLoader, setGltfLoader] = useState(new GLTFLoader());
-    const [canvas, setCanvas] = useState(document.getElementById('myCanvas'));
-    useEffect(() => {
-        setGltfLoader(new GLTFLoader());
-        setCanvas(document.getElementById('myCanvas'));
-    }, []);
+    const [canvas] = useState(document.getElementById('myCanvas'));
     return (
         <>
             <Sky sunPosition={[100, 10, 100]} scale={100}/>
@@ -181,7 +175,6 @@ function App() {
                 >
                     <Debug color="black" scale={1}>
                         <Scene
-                            gltfLoader={gltfLoader}
                             canvas={canvas}
                         />
                     </Debug>

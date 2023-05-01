@@ -62,7 +62,7 @@ export function Car({rotation,brain, position, controlsType, carModel,onChassisB
     let position1 = new Vector3(0, 0, 0);
     let quaternion = new Quaternion(0, 0, 0, 0);
     const numRays = 5; // set the number of rays to cast
-    const rayLength = 2.5; // set the length of the rays
+    const rayLength = 2; // set the length of the rays
     const rayAngle = Math.PI / 4; // set the angle between the rays
 
     const raycaster = new Raycaster();
@@ -87,8 +87,8 @@ export function Car({rotation,brain, position, controlsType, carModel,onChassisB
         }
 
         if (controls.forward) {
-            vehicleApi.applyEngineForce(150, 2);
-            vehicleApi.applyEngineForce(150, 3);
+            vehicleApi.applyEngineForce(100, 2);
+            vehicleApi.applyEngineForce(100, 3);
         } else if (controls.backward ) {
             vehicleApi.applyEngineForce(-100, 2);
             vehicleApi.applyEngineForce(-100, 3);
