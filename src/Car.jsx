@@ -11,7 +11,7 @@ import { Quaternion, Raycaster, Vector3} from "three";
 
 
 
-export function Car({brain, position, controlsType, carModel,onChassisBodyUpdate, id}) {
+export function Car({rotation,brain, position, controlsType, carModel,onChassisBodyUpdate, id}) {
     const width = 0.15;
     const height = 0.07;
     const front = 0.15;
@@ -112,7 +112,7 @@ export function Car({brain, position, controlsType, carModel,onChassisBodyUpdate
     return (
         <group ref={vehicle} name={`vehicle-${id}`}>
             <group ref={chassisBody} name={`chassisBody-${id}`}>
-                <primitive object={carModel} rotation-y={Math.PI} position={[0, -0.09, 0]}/>
+                <primitive object={carModel} rotation-y={rotation} position={[0, -0.09, 0]}/>
             </group>
         </group>
     );

@@ -20,8 +20,7 @@ function Scene({gltfLoader, canvas}) {
     brain = new NeuralNetwork(
         [5, 6, 4]
     );
-    const [carModel, setCarModel] = useState(null);
-    const [carModel2, setCarModel2] = useState(null);
+    const carModel = useLoader(GLTFLoader, process.env.PUBLIC_URL + "/models/car.glb").scene;
     if (localStorage.getItem("bestBrain")) {
         brain = JSON.parse(
             localStorage.getItem("bestBrain")
@@ -32,14 +31,8 @@ function Scene({gltfLoader, canvas}) {
     const quaternionRef = useRef(new Quaternion(0, 0, 0, 0));
     const wDirRef = useRef(new Vector3(0, 0, 1));
 
-    useEffect(() => {
-        gltfLoader.load(process.env.PUBLIC_URL + "/models/car.glb", (gltf) => {
-            setCarModel(gltf.scene);
-            setCarModel2(gltf.scene.clone());
-        });
-    }, [gltfLoader]);
 
-    const N = 5
+    const N = 3
     const [carStatus, setCarStatus] = useState(Array(N).fill(true));
     const cars = useMemo(() => {
         const result = [];
@@ -49,10 +42,10 @@ function Scene({gltfLoader, canvas}) {
                     <Car
                         key={i}
                         position={[-10, 0.1, 3]}
-                        rotation={[0, Math.PI, 0]}
+                        rotation={Math.PI}
                         brain={brain}
                         controlsType="AI"
-                        carModel={carModel}
+                        carModel={carModel.clone()}
                         id={i}
                         distance={0}
                         onChassisBodyUpdate={(chassisBody, distance, damage) => handleCarChassisApiUpdate(chassisBody, distance, damage, i)}
@@ -64,10 +57,10 @@ function Scene({gltfLoader, canvas}) {
                     <Car
                         key={i}
                         position={[-10, 0.1, 3]}
-                        rotation={[0, Math.PI, 0]}
+                        rotation={ Math.PI}
                         brain={mutatedBrain}
                         controlsType="AI"
-                        carModel={carModel2}
+                        carModel={carModel.clone()}
                         id={i}
                         distance={0}
                         onChassisBodyUpdate={(chassisBody, distance, damage) => handleCarChassisApiUpdate(chassisBody, distance, damage, i)}
@@ -76,7 +69,7 @@ function Scene({gltfLoader, canvas}) {
             }
         }
         return result;
-    }, [brain, carModel, carModel2]);
+    }, [brain, carModel]);
 
     let bestDistance = useRef(0);
     const [activeCar, setActiveCar] = useState(0);
