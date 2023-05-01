@@ -39,12 +39,12 @@ function Scene({gltfLoader, canvas}) {
         });
     }, [gltfLoader]);
 
-    const N = 2
+    const N = 5
     const [carStatus, setCarStatus] = useState(Array(N).fill(true));
     const cars = useMemo(() => {
         const result = [];
         for (let i = 0; i < N; i++) {
-            if (i===0){
+            if (i === 0) {
                 result.push(
                     <Car
                         key={i}
@@ -55,7 +55,7 @@ function Scene({gltfLoader, canvas}) {
                         carModel={carModel}
                         id={i}
                         distance={0}
-                        onChassisBodyUpdate={(chassisBody, distance, damage) => handleCarChassisApiUpdate(chassisBody, distance, damage,i)}
+                        onChassisBodyUpdate={(chassisBody, distance, damage) => handleCarChassisApiUpdate(chassisBody, distance, damage, i)}
                     />
                 );
             } else {
@@ -66,11 +66,11 @@ function Scene({gltfLoader, canvas}) {
                         position={[-10, 0.1, 3]}
                         rotation={[0, Math.PI, 0]}
                         brain={mutatedBrain}
-                        controlsType="Keys"
+                        controlsType="AI"
                         carModel={carModel2}
                         id={i}
                         distance={0}
-                        onChassisBodyUpdate={(chassisBody, distance, damage) => handleCarChassisApiUpdate(chassisBody, distance,damage, i)}
+                        onChassisBodyUpdate={(chassisBody, distance, damage) => handleCarChassisApiUpdate(chassisBody, distance, damage, i)}
                     />
                 );
             }
@@ -80,6 +80,7 @@ function Scene({gltfLoader, canvas}) {
 
     let bestDistance = useRef(0);
     const [activeCar, setActiveCar] = useState(0);
+    const [bestBrain, setBestBrain] = useState(brain);
     useEffect(() => {
         // Check if the active car has been removed
         if (!carStatus[activeCar]) {
@@ -91,10 +92,11 @@ function Scene({gltfLoader, canvas}) {
             }
         }
     }, [carStatus, activeCar]);
-    const handleCarChassisApiUpdate = useCallback((chassisBody, distance,damage, carId) => {
+    const handleCarChassisApiUpdate = useCallback((chassisBody, distance, damage, carId) => {
         if (distance > bestDistance.current) {
             bestDistance.current = distance;
             setActiveCar(carId);
+            setBestBrain(cars[carId].props.brain);
         }
         // remove car if damage is true
         if (damage) {
@@ -107,28 +109,26 @@ function Scene({gltfLoader, canvas}) {
                 const nextActiveCar = carStatus.findIndex((status) => status === true);
                 if (nextActiveCar !== -1) {
                     setActiveCar(nextActiveCar);
+                    setBestBrain(cars[nextActiveCar].props.brain);
                 }
             }
         }
-        if (carId === activeCar) {
-            positionRef.current.setFromMatrixPosition(chassisBody.current.matrixWorld);
-            quaternionRef.current.setFromRotationMatrix(chassisBody.current.matrixWorld);
 
-        }
-
-
-
-       wDirRef.current.set(0, 0, 1).applyQuaternion(quaternionRef.current);
+        if (carId !== activeCar) return;
+        positionRef.current.setFromMatrixPosition(chassisBody.current.matrixWorld);
+        quaternionRef.current.setFromRotationMatrix(chassisBody.current.matrixWorld);
+        wDirRef.current.set(0, 0, 1).applyQuaternion(quaternionRef.current);
         const offset = new Vector3(0, .2, 0);
         let cameraPosition = positionRef.current.clone().add(wDirRef.current.clone().multiplyScalar(1).add(offset));
         wDirRef.current.add(new Vector3(0, 0.2, 0));
         camera.position.copy(cameraPosition)
         camera.lookAt(positionRef.current)
-    }, [camera]);
+    }, [camera, activeCar, carStatus]);
+
     useEffect(() => {
         const saveButton = document.getElementById("saveButton");
         const handleSaveClick = () => {
-            localStorage.setItem("bestBrain", JSON.stringify(brain));
+            localStorage.setItem("bestBrain", JSON.stringify(bestBrain));
         };
         saveButton.addEventListener("click", handleSaveClick);
         return () => saveButton.removeEventListener("click", handleSaveClick);
@@ -142,11 +142,13 @@ function Scene({gltfLoader, canvas}) {
         contextRef.current = canvas.getContext("2d");
         canvas.width = 300;
         canvas.height = 400;
+
         function animate(time) {
             contextRef.current.lineDashOffset = -time / 50;
             Visualizer.drawNetwork(contextRef.current, brain);
             requestAnimationFrame(animate);
         }
+
         requestAnimationFrame(animate);
     }, [brain, canvas]);
     if (!carModel) {
@@ -154,7 +156,7 @@ function Scene({gltfLoader, canvas}) {
     }
     return (
         <>
-            <primitive object={camera} />
+            <primitive object={camera}/>
             <Ground/>
             {activeCars}
             <Stats/>
@@ -179,7 +181,7 @@ function App() {
                 <Physics
                     gravity={[0, -2.6, 0]}
                     broadphase="SAP"
-                    defaultContactMaterial={{ friction: 0.4, restitution: 0 }}
+                    defaultContactMaterial={{friction: 0.4, restitution: 0}}
                     allowSleep
                     iterations={20}
                     tolerance={0.0001}
